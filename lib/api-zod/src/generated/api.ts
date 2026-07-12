@@ -249,7 +249,7 @@ export const RequestUploadUrlBody = zod.object({
 
 
 export const RequestUploadUrlResponse = zod.object({
-  "uploadURL": zod.url().describe('Presigned GCS URL for PUT upload.'),
+  "uploadURL": zod.string().url().describe('Presigned GCS URL for PUT upload.'),
   "objectPath": zod.string().describe('Normalized object path (e.g. `\/objects\/uploads\/uuid`). Store this in your database.'),
   "metadata": zod.object({
   "name": zod.string().min(1).describe('Original file name.'),
