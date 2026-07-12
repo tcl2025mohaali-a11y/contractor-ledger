@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const projectsTable = pgTable("projects", {
   id: serial("id").primaryKey(),
+  userId: text("user_id"),
   name: text("name").notNull(),
   clientName: text("client_name").notNull(),
   location: text("location"),
@@ -15,6 +16,7 @@ export const projectsTable = pgTable("projects", {
 
 export const insertProjectSchema = createInsertSchema(projectsTable).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 export type InsertProject = z.infer<typeof insertProjectSchema>;

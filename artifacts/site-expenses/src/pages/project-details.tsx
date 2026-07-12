@@ -4,7 +4,7 @@ import { useGetProject, useListProjectTransactions, useDeleteProject, getListPro
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Edit, Trash2, ChevronRight, Building2, MapPin, Loader2, ArrowLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Edit, Trash2, Building2, MapPin, Loader2, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { ProjectDialog } from "@/components/project-dialog";
 import { TransactionDialog } from "@/components/transaction-dialog";

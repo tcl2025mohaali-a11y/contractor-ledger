@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useListProjects, useGetDashboardSummary } from "@workspace/api-client-react";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Building2, MapPin, Wallet, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";

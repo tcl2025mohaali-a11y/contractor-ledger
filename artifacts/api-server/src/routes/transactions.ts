@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, projectsTable, transactionsTable } from "@workspace/db";
 import {
   CreateProjectTransactionBody,
@@ -12,12 +12,16 @@ import {
   UpdateTransactionParams,
   UpdateTransactionResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
+
+router.use(requireAuth);
 
 router.get(
   "/projects/:id/transactions",
   async (req, res): Promise<void> => {
+    const userId = req.userId as string;
     const params = ListProjectTransactionsParams.safeParse(req.params);
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
@@ -27,7 +31,12 @@ router.get(
     const [project] = await db
       .select()
       .from(projectsTable)
-      .where(eq(projectsTable.id, params.data.id));
+      .where(
+        and(
+          eq(projectsTable.id, params.data.id),
+          eq(projectsTable.userId, userId),
+        ),
+      );
 
     if (!project) {
       res.status(404).json({ error: "Project not found" });
@@ -51,6 +60,7 @@ router.get(
 router.post(
   "/projects/:id/transactions",
   async (req, res): Promise<void> => {
+    const userId = req.userId as string;
     const params = CreateProjectTransactionParams.safeParse(req.params);
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
@@ -66,7 +76,12 @@ router.post(
     const [project] = await db
       .select()
       .from(projectsTable)
-      .where(eq(projectsTable.id, params.data.id));
+      .where(
+        and(
+          eq(projectsTable.id, params.data.id),
+          eq(projectsTable.userId, userId),
+        ),
+      );
 
     if (!project) {
       res.status(404).json({ error: "Project not found" });
@@ -98,7 +113,25 @@ router.post(
   },
 );
 
+async function findOwnedTransaction(transactionId: number, userId: string) {
+  const [row] = await db
+    .select({ transaction: transactionsTable })
+    .from(transactionsTable)
+    .innerJoin(
+      projectsTable,
+      eq(transactionsTable.projectId, projectsTable.id),
+    )
+    .where(
+      and(
+        eq(transactionsTable.id, transactionId),
+        eq(projectsTable.userId, userId),
+      ),
+    );
+  return row?.transaction;
+}
+
 router.patch("/transactions/:id", async (req, res): Promise<void> => {
+  const userId = req.userId as string;
   const params = UpdateTransactionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -108,6 +141,12 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
   const parsed = UpdateTransactionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const owned = await findOwnedTransaction(params.data.id, userId);
+  if (!owned) {
+    res.status(404).json({ error: "Transaction not found" });
     return;
   }
 
@@ -136,21 +175,22 @@ router.patch("/transactions/:id", async (req, res): Promise<void> => {
 });
 
 router.delete("/transactions/:id", async (req, res): Promise<void> => {
+  const userId = req.userId as string;
   const params = DeleteTransactionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
-  const [transaction] = await db
-    .delete(transactionsTable)
-    .where(eq(transactionsTable.id, params.data.id))
-    .returning();
-
-  if (!transaction) {
+  const owned = await findOwnedTransaction(params.data.id, userId);
+  if (!owned) {
     res.status(404).json({ error: "Transaction not found" });
     return;
   }
+
+  await db
+    .delete(transactionsTable)
+    .where(eq(transactionsTable.id, params.data.id));
 
   res.sendStatus(204);
 });

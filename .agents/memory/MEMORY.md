@@ -1,1 +1,2 @@
 - [Arabic RTL contractor expense app](arabic-rtl-app.md) — building Arabic-first apps: set dir="rtl" globally, use Intl.NumberFormat for currency, confirm scope (web vs native) before assuming multi-platform.
+- [Adding auth to an app with existing data](retrofitting-auth-orphan-claim.md) — when auth is added after data already exists, use a nullable owner column + one-time "claim on first access" instead of guessing an owner or deleting seed data.
