@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Construction project (site) operations
+  - name: transactions
+    description: Deposit and expense operations for a project
+  - name: dashboard
+    description: Cross-project overview operations
 paths:
   /healthz:
     get:
@@ -24,6 +30,203 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects with running totals
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a single project with running totals
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project and all its transactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /projects/{id}/transactions:
+    get:
+      operationId: listProjectTransactions
+      tags: [transactions]
+      summary: List transactions (deposits and expenses) for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+        "404":
+          description: Not found
+    post:
+      operationId: createProjectTransaction
+      tags: [transactions]
+      summary: Add a deposit or expense to a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "404":
+          description: Not found
+
+  /transactions/{id}:
+    patch:
+      operationId: updateTransaction
+      tags: [transactions]
+      summary: Update a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteTransaction
+      tags: [transactions]
+      summary: Delete a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get overview totals across all projects
+      responses:
+        "200":
+          description: Overview summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +237,152 @@ components:
       required:
         - status
 
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - clientName
+        - location
+        - notes
+        - totalReceived
+        - totalSpent
+        - balance
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        clientName:
+          type: string
+        location:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        totalReceived:
+          type: number
+          description: Sum of all deposits received for this project
+        totalSpent:
+          type: number
+          description: Sum of all expenses recorded for this project
+        balance:
+          type: number
+          description: totalReceived minus totalSpent (money remaining in hand)
+        createdAt:
+          type: string
+          format: date-time
+
+    ProjectInput:
+      type: object
+      required:
+        - name
+        - clientName
+      properties:
+        name:
+          type: string
+          minLength: 1
+        clientName:
+          type: string
+          minLength: 1
+        location:
+          type: string
+        notes:
+          type: string
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        clientName:
+          type: string
+          minLength: 1
+        location:
+          type: string
+        notes:
+          type: string
+
+    Transaction:
+      type: object
+      required:
+        - id
+        - projectId
+        - type
+        - amount
+        - description
+        - date
+        - createdAt
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        type:
+          type: string
+          enum: [deposit, expense]
+        amount:
+          type: number
+        description:
+          type: string
+        date:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+
+    TransactionInput:
+      type: object
+      required:
+        - type
+        - amount
+        - description
+        - date
+      properties:
+        type:
+          type: string
+          enum: [deposit, expense]
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        description:
+          type: string
+          minLength: 1
+        date:
+          type: string
+          format: date
+
+    TransactionUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [deposit, expense]
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        description:
+          type: string
+          minLength: 1
+        date:
+          type: string
+          format: date
+
+    DashboardSummary:
+      type: object
+      required:
+        - projectCount
+        - totalReceived
+        - totalSpent
+        - totalBalance
+      properties:
+        projectCount:
+          type: integer
+        totalReceived:
+          type: number
+        totalSpent:
+          type: number
+        totalBalance:
+          type: number

@@ -1,0 +1,1 @@
+- [Arabic RTL contractor expense app](arabic-rtl-app.md) — building Arabic-first apps: set dir="rtl" globally, use Intl.NumberFormat for currency, confirm scope (web vs native) before assuming multi-platform.

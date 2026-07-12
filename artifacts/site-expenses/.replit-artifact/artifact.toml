@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "مصاريف المشاريع"
+version = "1.0.0"
+id = "artifacts/site-expenses"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23731
+
+[services.development]
+run = "pnpm --filter @workspace/site-expenses run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/site-expenses", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/site-expenses/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23731"
+BASE_PATH = "/"
