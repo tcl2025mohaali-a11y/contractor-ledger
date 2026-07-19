@@ -14,6 +14,9 @@ app.use("*", cors({ origin: "*", credentials: true }));
 // @hono/clerk-auth automatically pulls CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY from c.env
 app.use("*", clerkMiddleware());
 
+// Health check
+app.get("/", (c) => c.json({ status: "ok", message: "API Server is running!" }));
+
 // Mount API routes
 app.route("/api", router);
 
