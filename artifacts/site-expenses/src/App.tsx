@@ -237,7 +237,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary">
           <Show when="signed-in">
-            <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-30">
+            <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-30 print:hidden">
               <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
                 <h1 className="text-xl font-bold tracking-tight">إدارة مشاريع البناء</h1>
                 <LogoutButton />

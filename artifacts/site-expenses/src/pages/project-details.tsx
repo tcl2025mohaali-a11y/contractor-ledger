@@ -4,7 +4,7 @@ import { useGetProject, useListProjectTransactions, useDeleteProject, getListPro
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Edit, Trash2, Building2, MapPin, Loader2, ArrowLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Edit, Trash2, Building2, MapPin, Loader2, ArrowLeft, Printer } from "lucide-react";
 import { Link } from "wouter";
 import { ProjectDialog } from "@/components/project-dialog";
 import { TransactionDialog } from "@/components/transaction-dialog";
@@ -77,10 +77,19 @@ export default function ProjectDetails() {
 
   return (
     <div className="space-y-6 pb-20">
+      {/* Print-only Report Header */}
+      <div className="hidden print:block mb-8 border-b-2 border-foreground pb-4">
+        <h1 className="text-3xl font-black mb-2">تقرير تفصيلي لمعاملات المشروع</h1>
+        <div className="flex justify-between text-sm text-muted-foreground font-bold mt-4">
+          <span>تاريخ الطباعة: {new Date().toLocaleDateString('ar-LY')}</span>
+          <span>بواسطة: المقاول ليدجر (Contractor Ledger)</span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+          <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-muted text-muted-foreground transition-colors print:hidden">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
@@ -91,7 +100,10 @@ export default function ProjectDetails() {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 print:hidden">
+          <Button variant="outline" size="icon" onClick={() => window.print()} title="طباعة التقرير">
+            <Printer className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => setEditProjectOpen(true)}>
             <Edit className="h-4 w-4" />
           </Button>
@@ -102,10 +114,10 @@ export default function ProjectDetails() {
       </div>
 
       {/* Massive Balance Card */}
-      <Card className={`overflow-hidden border-2 ${project.balance >= 0 ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'}`}>
+      <Card className={`overflow-hidden border-2 ${project.balance >= 0 ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5'} print:border-foreground/20 print:bg-transparent print:shadow-none`}>
         <CardContent className="p-8 sm:p-10 text-center">
           <p className="text-sm sm:text-base font-medium text-muted-foreground mb-2">الرصيد المتبقي في الجيب</p>
-          <div className={`text-5xl sm:text-6xl font-black tracking-tight ${project.balance >= 0 ? 'text-success' : 'text-destructive'}`}>
+          <div className={`text-5xl sm:text-6xl font-black tracking-tight ${project.balance >= 0 ? 'text-success' : 'text-destructive'} print:text-foreground`}>
             {formatCurrency(project.balance)}
           </div>
           
@@ -123,7 +135,7 @@ export default function ProjectDetails() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:hidden">
         <Button size="lg" variant="success" className="h-14 text-base shadow-sm" onClick={() => openTransactionDialog("deposit")}>
           <ArrowDownRight className="ml-2 h-5 w-5" />
           تسجيل دفعة مستلمة
@@ -147,7 +159,7 @@ export default function ProjectDetails() {
         ) : (
           <div className="space-y-3">
             {transactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-4 bg-card border rounded-lg shadow-sm hover:shadow transition-shadow">
+              <div key={tx.id} className="flex items-center justify-between p-4 bg-card border rounded-lg shadow-sm hover:shadow transition-shadow print:shadow-none print:break-inside-avoid print:border-foreground/30 print:bg-transparent">
                 <div className="flex items-center gap-4">
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'deposit' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                     {tx.type === 'deposit' ? <ArrowDownRight className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
@@ -163,7 +175,7 @@ export default function ProjectDetails() {
                     {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
                   </span>
                   
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 print:hidden">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => openTransactionDialog(tx.type, tx.id, {
                       type: tx.type,
                       amount: tx.amount,
