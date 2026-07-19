@@ -80,7 +80,7 @@ export default function Dashboard() {
               <p className="mt-2 text-sm font-bold">VITE_API_URL is: {import.meta.env.VITE_API_URL || "NOT SET (UNDEFINED)"}</p>
               <p className="mt-2 text-sm">It received this response instead of data:</p>
               <pre className="mt-4 p-4 bg-background/50 rounded overflow-auto max-h-48 text-xs text-left whitespace-pre-wrap font-mono" dir="ltr">
-                {typeof projects === 'string' ? projects.slice(0, 500) : JSON.stringify(projects, null, 2)}
+                {typeof (projects as any) === 'string' ? (projects as any).slice(0, 500) : JSON.stringify(projects, null, 2)}
               </pre>
             </CardContent>
           </Card>
