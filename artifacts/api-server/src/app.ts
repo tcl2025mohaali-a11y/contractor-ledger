@@ -17,4 +17,10 @@ app.use("*", clerkMiddleware());
 // Mount API routes
 app.route("/api", router);
 
+// Global Error Handler
+app.onError((err, c) => {
+  console.error("Global Error:", err);
+  return c.json({ error: err.message, stack: err.stack }, 500);
+});
+
 export default app;

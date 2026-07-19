@@ -123,7 +123,7 @@ export default function ProjectDetails() {
       </Card>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Button size="lg" variant="success" className="h-14 text-base shadow-sm" onClick={() => openTransactionDialog("deposit")}>
           <ArrowDownRight className="ml-2 h-5 w-5" />
           تسجيل دفعة مستلمة

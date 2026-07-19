@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { Route, Switch, useLocation, Router as WouterRouter, Redirect } from 'wouter';
-import { ClerkProvider, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, Show, useClerk, useAuth } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import Dashboard from '@/pages/dashboard';
@@ -141,10 +141,17 @@ function LogoutButton() {
   );
 }
 
+import { setAuthTokenGetter } from '@workspace/api-client-react';
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    setAuthTokenGetter(getToken);
+  }, [getToken]);
 
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
