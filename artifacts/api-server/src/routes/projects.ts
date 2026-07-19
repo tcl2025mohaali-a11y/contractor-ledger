@@ -21,6 +21,7 @@ import {
 import { attachTotals, attachTotalsSingle } from "../lib/projectTotals";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createClerkClient } from "@clerk/backend";
+import { env } from "hono/adapter";
 
 type Env = {
   Variables: {
@@ -31,8 +32,6 @@ type Env = {
 const router = new Hono<Env>();
 
 router.use("*", requireAuth);
-
-const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 async function claimOrphanProjects(userId: string): Promise<void> {
   await db
@@ -186,6 +185,9 @@ router.post("/projects/:id/members", async (c) => {
   if (!parsed.success) return c.json({ error: parsed.error.message }, 400);
 
   const emailToInvite = parsed.data.email;
+
+  const { CLERK_SECRET_KEY } = env<{ CLERK_SECRET_KEY: string }>(c);
+  const clerkClient = createClerkClient({ secretKey: CLERK_SECRET_KEY });
 
   const users = await clerkClient.users.getUserList({ emailAddress: [emailToInvite] });
   if (!users || !users.data || users.data.length === 0) {
