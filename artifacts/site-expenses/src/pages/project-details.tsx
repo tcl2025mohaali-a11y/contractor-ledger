@@ -12,11 +12,8 @@ import { ProjectDialog } from "@/components/project-dialog";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { MembersDialog } from "@/components/members-dialog";
 import { ImportDialog } from "@/components/import-dialog";
-import { PrintableReport } from "@/components/printable-report";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useQueryClient } from "@tanstack/react-query";
-import { useReactToPrint } from "react-to-print";
-import { useRef } from "react";
 import { toast } from "sonner";
 import { useDeleteTransaction, getListProjectTransactionsQueryKey, getGetProjectQueryKey } from "@workspace/api-client-react";
 
@@ -25,7 +22,6 @@ export default function ProjectDetails() {
   const projectId = Number(id);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const componentRef = useRef<HTMLDivElement>(null);
 
   const { data: project, isLoading: isLoadingProject } = useGetProject(projectId);
   const { data: transactions, isLoading: isLoadingTransactions } = useListProjectTransactions(projectId);
@@ -92,11 +88,6 @@ export default function ProjectDetails() {
     }
   };
 
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: project ? `تقرير_حركات_${project.name.replace(/\s+/g, "_")}` : "تقرير_حركات",
-  });
-
   if (isLoadingProject) {
     return <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   }
@@ -134,7 +125,7 @@ export default function ProjectDetails() {
           <Button variant="outline" size="icon" onClick={() => exportTransactionsToCSV(project as any, transactions as any)} title="تصدير كملف إكسيل (CSV)">
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => handlePrint()} title="طباعة التقرير">
+          <Button variant="outline" size="icon" onClick={() => window.open(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/projects/${projectId}/print`, '_blank')} title="طباعة التقرير">
             <Printer className="h-4 w-4" />
           </Button>
           {project.currentUserRole !== 'viewer' && (
@@ -305,14 +296,6 @@ export default function ProjectDetails() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
       />
-
-      <div style={{ display: "none" }}>
-        <PrintableReport 
-          ref={componentRef} 
-          project={project as any} 
-          transactions={(transactions || []) as any} 
-        />
-      </div>
     </div>
   );
 }

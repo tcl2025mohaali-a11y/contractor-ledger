@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { Route, Switch, useLocation, Router as WouterRouter, Redirect } from 'wouter';
@@ -12,6 +12,9 @@ import SignInPage from '@/pages/sign-in';
 import SignUpPage from '@/pages/sign-up';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemeToggle } from '@/components/theme-toggle';
+import PrintProject from '@/pages/print-project';
+import { AppLockProvider, PinSettingsDialog } from '@/components/pin-lock';
+import { Lock } from 'lucide-react';
 
 // REQUIRED — copy verbatim. Resolves the key from window.location.hostname so the
 // same build serves multiple Clerk custom domains. Do not inline the env var, leave
@@ -130,6 +133,19 @@ function AuthedProjectDetails() {
   );
 }
 
+function AuthedPrintProject() {
+  return (
+    <>
+      <Show when="signed-in">
+        <PrintProject />
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/" />
+      </Show>
+    </>
+  );
+}
+
 function LogoutButton() {
   const { signOut } = useClerk();
   return (
@@ -177,6 +193,7 @@ function Router() {
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/dashboard" component={AuthedDashboard} />
       <Route path="/projects/:id" component={AuthedProjectDetails} />
+      <Route path="/projects/:id/print" component={AuthedPrintProject} />
       <Route>
         <div className="py-20 text-center text-muted-foreground flex flex-col items-center gap-4">
           <div className="text-4xl font-black text-muted">404</div>
@@ -198,6 +215,17 @@ const queryClient = new QueryClient({
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  const [pinSettingsOpen, setPinSettingsOpen] = useState(false);
+  const location = window.location.pathname;
+  
+  const handleManualLock = () => {
+    if (localStorage.getItem("app_pin")) {
+      sessionStorage.removeItem("app_unlocked");
+      window.dispatchEvent(new Event("storage"));
+    } else {
+      setPinSettingsOpen(true);
+    }
+  };
 
   return (
     <ClerkProvider
@@ -238,22 +266,34 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="contractor-ledger-theme">
           <ClerkQueryClientCacheInvalidator />
-          <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary">
-            <Show when="signed-in">
-              <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-30 print:hidden">
-                <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-                  <h1 className="text-xl font-bold tracking-tight">إدارة مشاريع البناء</h1>
-                  <div className="flex items-center gap-2">
-                    <ThemeToggle />
-                    <LogoutButton />
-                  </div>
-                </div>
-              </header>
-            </Show>
-            <main>
-              <Router />
-            </main>
-          </div>
+          <AppLockProvider>
+            <div className="min-h-[100dvh] bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary">
+              <Show when="signed-in">
+                {!location.includes('/print') && (
+                  <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-30 print:hidden">
+                    <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+                      <h1 className="text-xl font-bold tracking-tight">إدارة مشاريع البناء</h1>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleManualLock}
+                          className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-primary-foreground/10 transition-colors"
+                          title="قفل التطبيق / إعدادات القفل"
+                        >
+                          <Lock className="h-4 w-4" />
+                        </button>
+                        <ThemeToggle />
+                        <LogoutButton />
+                      </div>
+                    </div>
+                  </header>
+                )}
+              </Show>
+              <main>
+                <Router />
+              </main>
+            </div>
+          </AppLockProvider>
+          <PinSettingsDialog open={pinSettingsOpen} onOpenChange={setPinSettingsOpen} />
           <Toaster position="top-center" dir="rtl" />
         </ThemeProvider>
       </QueryClientProvider>
