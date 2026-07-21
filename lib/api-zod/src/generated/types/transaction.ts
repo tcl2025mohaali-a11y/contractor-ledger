@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { TransactionCategory } from './transactionCategory';
 import type { TransactionDeductionType } from './transactionDeductionType';
 import type { TransactionPaymentMethod } from './transactionPaymentMethod';
 import type { TransactionType } from './transactionType';
@@ -23,6 +24,7 @@ export interface Transaction {
   /** Name of the person giving or receiving the money */
   personName?: string | null;
   paymentMethod?: TransactionPaymentMethod;
+  category?: TransactionCategory;
   deductionType?: TransactionDeductionType;
   /** Value of deduction (e.g. 10.00 or 150) */
   deductionValue?: number | null;

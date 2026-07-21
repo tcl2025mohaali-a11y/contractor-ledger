@@ -106,6 +106,18 @@ export const TransactionPaymentMethod = {
   check: 'check',
 } as const;
 
+export type TransactionCategory = typeof TransactionCategory[keyof typeof TransactionCategory];
+
+
+export const TransactionCategory = {
+  materials: 'materials',
+  labor: 'labor',
+  transport: 'transport',
+  permits: 'permits',
+  equipment: 'equipment',
+  others: 'others',
+} as const;
+
 export type TransactionDeductionType = typeof TransactionDeductionType[keyof typeof TransactionDeductionType] | null;
 
 
@@ -128,6 +140,7 @@ export interface Transaction {
   /** Name of the person giving or receiving the money */
   personName?: string | null;
   paymentMethod?: TransactionPaymentMethod;
+  category?: TransactionCategory;
   deductionType?: TransactionDeductionType;
   /** Value of deduction (e.g. 10.00 or 150) */
   deductionValue?: number | null;
@@ -156,6 +169,18 @@ export const TransactionInputPaymentMethod = {
   check: 'check',
 } as const;
 
+export type TransactionInputCategory = typeof TransactionInputCategory[keyof typeof TransactionInputCategory];
+
+
+export const TransactionInputCategory = {
+  materials: 'materials',
+  labor: 'labor',
+  transport: 'transport',
+  permits: 'permits',
+  equipment: 'equipment',
+  others: 'others',
+} as const;
+
 export type TransactionInputDeductionType = typeof TransactionInputDeductionType[keyof typeof TransactionInputDeductionType] | null;
 
 
@@ -176,6 +201,7 @@ export interface TransactionInput {
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionInputPaymentMethod;
+  category?: TransactionInputCategory;
   deductionType?: TransactionInputDeductionType;
   deductionValue?: number | null;
   deductionReason?: string | null;

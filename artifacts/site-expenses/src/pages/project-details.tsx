@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { useGetProject, useListProjectTransactions, useDeleteProject, getListProjectsQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownRight, Edit, Trash2, Building2, MapPin, Loader2, ArrowLeft, Printer, Download, Image as ImageIcon, Users, Upload } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Edit, Trash2, Building2, MapPin, Loader2, ArrowLeft, Printer, Download, Image as ImageIcon, Users, Upload, Search, Filter } from "lucide-react";
 import { Link } from "wouter";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportTransactionsToCSV } from "@/lib/export";
 import { customFetch } from "@workspace/api-client-react";
 import { ProjectDialog } from "@/components/project-dialog";
@@ -40,6 +43,54 @@ export default function ProjectDetails() {
   const [editTransactionDefault, setEditTransactionDefault] = useState<any>();
   
   const [deleteTransactionId, setDeleteTransactionId] = useState<number | undefined>();
+
+  // Filtering states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  const filteredTransactions = useMemo(() => {
+    return transactions?.filter(tx => {
+      if (typeFilter !== "all" && tx.type !== typeFilter) return false;
+      if (categoryFilter !== "all" && (tx as any).category !== categoryFilter) return false;
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        return tx.description.toLowerCase().includes(term) ||
+               (tx.personName && tx.personName.toLowerCase().includes(term)) ||
+               (tx.shopName && tx.shopName.toLowerCase().includes(term));
+      }
+      return true;
+    });
+  }, [transactions, typeFilter, categoryFilter, searchTerm]);
+
+  const categoryData = useMemo(() => {
+    if (!transactions) return [];
+    const expenses = transactions.filter(t => t.type === 'expense');
+    const categories: Record<string, number> = {};
+    expenses.forEach(tx => {
+      const cat = (tx as any).category || 'others';
+      categories[cat] = (categories[cat] || 0) + Number(tx.amount);
+    });
+    return Object.entries(categories).map(([name, value]) => ({ name, value })).filter(d => d.value > 0);
+  }, [transactions]);
+
+  const CATEGORY_COLORS: Record<string, string> = {
+    materials: 'hsl(215 100% 50%)',
+    labor: 'hsl(142 70% 40%)',
+    transport: 'hsl(30 90% 50%)',
+    permits: 'hsl(280 70% 50%)',
+    equipment: 'hsl(348 80% 50%)',
+    others: 'hsl(215 16% 47%)',
+  };
+  
+  const CATEGORY_LABELS: Record<string, string> = {
+    materials: 'مواد بناء',
+    labor: 'عمالة',
+    transport: 'نقل',
+    permits: 'تراخيص',
+    equipment: 'معدات',
+    others: 'أخرى',
+  };
 
   const openTransactionDialog = (type: "deposit" | "expense", id?: number, defaultVals?: any) => {
     setTransactionType(type);
@@ -176,9 +227,83 @@ export default function ProjectDetails() {
         </div>
       )}
 
+      {/* Analytics & Charts */}
+      {categoryData.length > 0 && (
+        <Card className="print:hidden shadow-sm mt-8">
+          <CardContent className="p-4 sm:p-6 flex flex-col items-center">
+            <h3 className="text-lg font-bold mb-4 w-full text-center">تحليل المصاريف حسب التصنيف</h3>
+            <div className="h-64 w-full" dir="ltr">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS.others} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={(label) => CATEGORY_LABELS[label as string] || label}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))', direction: 'rtl' }}
+                  />
+                  <Legend formatter={(value) => CATEGORY_LABELS[value as string] || value} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 print:hidden mt-8">
+        <div className="relative">
+          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="بحث (الوصف، المحل، الشخص)..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pr-9"
+          />
+        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger>
+            <div className="flex items-center gap-2"><Filter className="h-4 w-4 opacity-50" /> <SelectValue placeholder="نوع الحركة" /></div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">جميع الحركات</SelectItem>
+            <SelectItem value="deposit">الدفعات المستلمة فقط</SelectItem>
+            <SelectItem value="expense">المصاريف فقط</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger>
+            <div className="flex items-center gap-2"><Filter className="h-4 w-4 opacity-50" /> <SelectValue placeholder="التصنيف" /></div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">جميع التصنيفات</SelectItem>
+            <SelectItem value="materials">مواد بناء</SelectItem>
+            <SelectItem value="labor">عمالة</SelectItem>
+            <SelectItem value="transport">نقل</SelectItem>
+            <SelectItem value="equipment">معدات</SelectItem>
+            <SelectItem value="permits">تراخيص</SelectItem>
+            <SelectItem value="others">أخرى</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Transactions List */}
-      <div className="mt-8 space-y-4">
-        <h3 className="text-lg font-bold">سجل الحركات</h3>
+      <div className="mt-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold">سجل الحركات</h3>
+          {filteredTransactions && <span className="text-sm text-muted-foreground">{filteredTransactions.length} حركة</span>}
+        </div>
         
         {isLoadingTransactions ? (
           <div className="flex justify-center p-8 text-muted-foreground"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -188,7 +313,7 @@ export default function ProjectDetails() {
           </div>
         ) : (
           <div className="space-y-3">
-            {transactions.map((tx) => (
+            {filteredTransactions?.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between p-4 bg-card border rounded-lg shadow-sm hover:shadow transition-shadow print:shadow-none print:break-inside-avoid print:border-foreground/30 print:bg-transparent">
                 <div className="flex items-center gap-4">
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'deposit' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
@@ -203,6 +328,11 @@ export default function ProjectDetails() {
                       )}
                       {tx.shopName && <span className="opacity-75">• 🏪 {tx.shopName}</span>}
                       {tx.personName && <span className="opacity-75">• 👤 {tx.personName}</span>}
+                      {tx.type === 'expense' && (tx as any).category && (tx as any).category !== 'others' && (
+                        <span className="opacity-100 mr-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">
+                          {CATEGORY_LABELS[(tx as any).category] || (tx as any).category}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -235,6 +365,7 @@ export default function ProjectDetails() {
                             date: tx.date.split('T')[0],
                             shopName: tx.shopName || "",
                             personName: tx.personName || "",
+                            category: (tx as any).category || "others",
                             paymentMethod: tx.paymentMethod || "cash",
                             deductionType: tx.deductionType || "percentage",
                             deductionValue: tx.deductionValue || "",

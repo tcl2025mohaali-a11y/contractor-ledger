@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const [isLocked, setIsLocked] = useState(false);
@@ -27,6 +28,34 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("storage", checkLock);
     return () => window.removeEventListener("storage", checkLock);
   }, []);
+
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const resetTimer = () => {
+      const savedPin = localStorage.getItem("app_pin");
+      const currentUnlocked = sessionStorage.getItem("app_unlocked") === "true";
+      if (!savedPin || !currentUnlocked) return;
+
+      const timeoutMins = parseInt(localStorage.getItem("app_pin_timeout") || "15", 10);
+      
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        sessionStorage.removeItem("app_unlocked");
+        window.dispatchEvent(new Event("storage"));
+        toast.info("تم قفل التطبيق تلقائياً بسبب عدم النشاط");
+      }, timeoutMins * 60 * 1000);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(e => document.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      events.forEach(e => document.removeEventListener(e, resetTimer));
+    };
+  }, [isLocked]);
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,10 +105,12 @@ export function PinSettingsDialog({ open, onOpenChange }: { open: boolean, onOpe
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [hasPin, setHasPin] = useState(false);
+  const [timeoutMins, setTimeoutMins] = useState("15");
 
   useEffect(() => {
     if (open) {
       setHasPin(!!localStorage.getItem("app_pin"));
+      setTimeoutMins(localStorage.getItem("app_pin_timeout") || "15");
       setCurrentPin("");
       setNewPin("");
     }
@@ -111,6 +142,7 @@ export function PinSettingsDialog({ open, onOpenChange }: { open: boolean, onOpe
     }
     
     localStorage.setItem("app_pin", newPin);
+    localStorage.setItem("app_pin_timeout", timeoutMins);
     sessionStorage.setItem("app_unlocked", "true");
     toast.success("تم تعيين رمز الحماية بنجاح");
     window.dispatchEvent(new Event("storage"));
@@ -149,6 +181,22 @@ export function PinSettingsDialog({ open, onOpenChange }: { open: boolean, onOpe
               onChange={(e) => setNewPin(e.target.value)}
               placeholder="••••"
             />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">القفل التلقائي (عند عدم النشاط)</label>
+            <Select value={timeoutMins} onValueChange={setTimeoutMins}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر المدة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">دقيقة واحدة</SelectItem>
+                <SelectItem value="5">5 دقائق</SelectItem>
+                <SelectItem value="15">15 دقيقة</SelectItem>
+                <SelectItem value="30">30 دقيقة</SelectItem>
+                <SelectItem value="60">ساعة واحدة</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

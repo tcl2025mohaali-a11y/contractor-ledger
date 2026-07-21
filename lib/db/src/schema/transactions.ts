@@ -18,6 +18,7 @@ export const transactionsTable = pgTable("transactions", {
     .references(() => projectsTable.id, { onDelete: "cascade" }),
   type: text("type", { enum: ["deposit", "expense"] }).notNull(),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  category: text("category", { enum: ["materials", "labor", "transport", "permits", "equipment", "others"] }).default("others").notNull(),
   description: text("description").notNull(),
   date: date("date", { mode: "string" }).notNull(),
   receiptPath: text("receipt_path"),

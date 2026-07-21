@@ -20,6 +20,7 @@ const transactionSchema = z.object({
   receiptPath: z.string().optional(),
   shopName: z.string().optional(),
   personName: z.string().optional(),
+  category: z.enum(["materials", "labor", "transport", "permits", "equipment", "others"]).optional().default("others"),
   paymentMethod: z.enum(["cash", "transfer", "card", "check"]).optional().default("cash"),
   deductionType: z.enum(["percentage", "amount"]).optional().default("percentage"),
   deductionValue: z.coerce.number().min(0, "لا يمكن أن تكون القيمة سالبة").optional().or(z.literal("")),
@@ -55,6 +56,7 @@ export function TransactionDialog({
       date: new Date().toISOString().split('T')[0],
       shopName: "",
       personName: "",
+      category: "others",
       paymentMethod: "cash",
       deductionType: "percentage",
       deductionValue: "",
@@ -78,6 +80,7 @@ export function TransactionDialog({
         description: "",
         shopName: "",
         personName: "",
+        category: "others",
         paymentMethod: "cash",
         deductionType: "percentage",
         deductionValue: "",
@@ -226,22 +229,46 @@ export function TransactionDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>طريقة الدفع</Label>
-            <Select 
-              value={form.watch("paymentMethod")} 
-              onValueChange={(val: any) => form.setValue("paymentMethod", val)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">نقدي (Cash)</SelectItem>
-                <SelectItem value="transfer">تحويل بنكي (Transfer)</SelectItem>
-                <SelectItem value="card">بطاقة (Card)</SelectItem>
-                <SelectItem value="check">صك (Check)</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>طريقة الدفع</Label>
+              <Select 
+                value={form.watch("paymentMethod")} 
+                onValueChange={(val: any) => form.setValue("paymentMethod", val)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">نقدي (Cash)</SelectItem>
+                  <SelectItem value="transfer">تحويل بنكي (Transfer)</SelectItem>
+                  <SelectItem value="card">بطاقة (Card)</SelectItem>
+                  <SelectItem value="check">صك (Check)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {type === "expense" && (
+              <div className="space-y-2">
+                <Label>التصنيف</Label>
+                <Select 
+                  value={form.watch("category")} 
+                  onValueChange={(val: any) => form.setValue("category", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="materials">مواد بناء (Materials)</SelectItem>
+                    <SelectItem value="labor">عمالة (Labor)</SelectItem>
+                    <SelectItem value="transport">نقل وتوصيل (Transport)</SelectItem>
+                    <SelectItem value="equipment">معدات وآليات (Equipment)</SelectItem>
+                    <SelectItem value="permits">تراخيص ورسوم (Permits)</SelectItem>
+                    <SelectItem value="others">أخرى (Others)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {type === "expense" && (
