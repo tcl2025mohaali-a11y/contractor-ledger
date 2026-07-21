@@ -185,19 +185,19 @@ export function TransactionDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label>المبلغ الأساسي للفاتورة (د.ل)</Label>
+            <Label>{type === "expense" ? "المبلغ الأساسي للفاتورة (د.ل)" : "المبلغ (د.ل)"}</Label>
             <Input 
               type="number" 
               step="any" 
               {...form.register("amount")} 
-              placeholder="مثال: 1500" 
+              placeholder={type === "expense" ? "مثال: 1500" : "مثال: 5000"} 
               dir="ltr" 
               className="text-right text-lg font-bold" 
             />
             {form.formState.errors.amount && <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>}
           </div>
 
-          {(calcGross() > Number(watchAmount || 0)) && (
+          {(type === "expense" && calcGross() > Number(watchAmount || 0)) && (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-md text-center">
               <span className="text-sm text-muted-foreground block mb-1">الإجمالي الذي سيتم خصمه من رصيد المشروع:</span>
               <span className="text-xl font-black text-primary" dir="ltr">{calcGross().toFixed(2)} د.ل</span>
@@ -244,63 +244,67 @@ export function TransactionDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg border border-border">
-            <div className="space-y-2">
-              <Label>الخصم / التوريد (اختياري)</Label>
-              <div className="flex gap-2">
-                <Select 
-                  value={form.watch("deductionType")} 
-                  onValueChange={(val: any) => form.setValue("deductionType", val)}
-                >
-                  <SelectTrigger className="w-[100px] shrink-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">نسبة %</SelectItem>
-                    <SelectItem value="amount">رقم ثابت</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input 
-                  type="number" 
-                  step="any" 
-                  {...form.register("deductionValue")} 
-                  placeholder={form.watch("deductionType") === "percentage" ? "10" : "150"} 
-                  dir="ltr" 
-                  className="text-right" 
-                />
+          {type === "expense" && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg border border-border">
+                <div className="space-y-2">
+                  <Label>الخصم / التوريد (اختياري)</Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={form.watch("deductionType")} 
+                      onValueChange={(val: any) => form.setValue("deductionType", val)}
+                    >
+                      <SelectTrigger className="w-[100px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">نسبة %</SelectItem>
+                        <SelectItem value="amount">رقم ثابت</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input 
+                      type="number" 
+                      step="any" 
+                      {...form.register("deductionValue")} 
+                      placeholder={form.watch("deductionType") === "percentage" ? "10" : "150"} 
+                      dir="ltr" 
+                      className="text-right" 
+                    />
+                  </div>
+                  {form.formState.errors.deductionValue && <p className="text-sm text-destructive">{form.formState.errors.deductionValue.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>سبب الخصم (اختياري)</Label>
+                  <Input {...form.register("deductionReason")} placeholder="مثال: عمولة / نسبة توريد" />
+                </div>
               </div>
-              {form.formState.errors.deductionValue && <p className="text-sm text-destructive">{form.formState.errors.deductionValue.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label>سبب الخصم (اختياري)</Label>
-              <Input {...form.register("deductionReason")} placeholder="مثال: عمولة / نسبة توريد" />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-muted/10 p-3 rounded-lg border border-border border-dashed">
-            <div className="space-y-2">
-              <Label>تكلفة النقل (اختياري)</Label>
-              <Input 
-                type="number" 
-                step="any" 
-                {...form.register("transportCost")} 
-                placeholder="مثال: 50" 
-                dir="ltr" 
-                className="text-right" 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>اليد العاملة (اختياري)</Label>
-              <Input 
-                type="number" 
-                step="any" 
-                {...form.register("laborCost")} 
-                placeholder="مثال: 100" 
-                dir="ltr" 
-                className="text-right" 
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-4 bg-muted/10 p-3 rounded-lg border border-border border-dashed">
+                <div className="space-y-2">
+                  <Label>تكلفة النقل (اختياري)</Label>
+                  <Input 
+                    type="number" 
+                    step="any" 
+                    {...form.register("transportCost")} 
+                    placeholder="مثال: 50" 
+                    dir="ltr" 
+                    className="text-right" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>اليد العاملة (اختياري)</Label>
+                  <Input 
+                    type="number" 
+                    step="any" 
+                    {...form.register("laborCost")} 
+                    placeholder="مثال: 100" 
+                    dir="ltr" 
+                    className="text-right" 
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label>صورة الفاتورة / الإيصال (اختياري)</Label>
