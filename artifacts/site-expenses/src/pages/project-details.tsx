@@ -221,17 +221,28 @@ export default function ProjectDetails() {
                       )}
                     {project.currentUserRole !== 'viewer' && (
                       <>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => openTransactionDialog(tx.type, tx.id, {
-                          type: tx.type,
-                          amount: tx.amount,
-                          description: tx.description,
-                          date: tx.date.split('T')[0],
-                          shopName: tx.shopName || "",
-                          personName: tx.personName || "",
-                          paymentMethod: tx.paymentMethod || "cash",
-                          deductionPercentage: tx.deductionPercentage || "",
-                          deductionReason: tx.deductionReason || "",
-                        })}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => {
+                          const t = tx.transportCost || 0;
+                          const l = tx.laborCost || 0;
+                          const dv = tx.deductionValue || 0;
+                          const isPerc = tx.deductionType !== 'amount';
+                          const baseAmount = isPerc ? ((tx.amount - t - l) / (1 + (dv / 100))) : (tx.amount - t - l - dv);
+                          
+                          openTransactionDialog(tx.type, tx.id, {
+                            type: tx.type,
+                            amount: baseAmount,
+                            description: tx.description,
+                            date: tx.date.split('T')[0],
+                            shopName: tx.shopName || "",
+                            personName: tx.personName || "",
+                            paymentMethod: tx.paymentMethod || "cash",
+                            deductionType: tx.deductionType || "percentage",
+                            deductionValue: tx.deductionValue || "",
+                            deductionReason: tx.deductionReason || "",
+                            transportCost: tx.transportCost || "",
+                            laborCost: tx.laborCost || "",
+                          });
+                        }}>
                           <Edit className="h-3.5 w-3.5" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteTransactionId(tx.id)}>
@@ -241,13 +252,42 @@ export default function ProjectDetails() {
                     )}
                   </div>
                 </div>
-                {tx.deductionPercentage ? (
-                  <div className="text-xs flex flex-col items-end mt-2 px-3 py-1.5 bg-muted/30 rounded border border-border/50 w-full sm:w-auto">
-                    <span className="text-muted-foreground">الصافي: {formatCurrency(tx.amount - (tx.amount * tx.deductionPercentage / 100))}</span>
-                    <span className="text-destructive font-medium mt-0.5">
-                      {tx.deductionReason || 'خصم'} ({tx.deductionPercentage}%): {formatCurrency(tx.amount * tx.deductionPercentage / 100)}
-                    </span>
-                  </div>
+                {(tx.deductionValue || tx.transportCost || tx.laborCost) ? (
+                  (() => {
+                    const t = tx.transportCost || 0;
+                    const l = tx.laborCost || 0;
+                    const dv = tx.deductionValue || 0;
+                    const isPerc = tx.deductionType !== 'amount';
+                    const baseAmount = isPerc ? ((tx.amount - t - l) / (1 + (dv / 100))) : (tx.amount - t - l - dv);
+                    const dedAmount = isPerc ? (baseAmount * (dv / 100)) : dv;
+                    
+                    return (
+                      <div className="text-[11px] sm:text-xs flex flex-col items-end mt-2 px-3 py-2 bg-muted/30 rounded border border-border/50 w-full sm:w-auto min-w-[200px]">
+                        <div className="flex justify-between w-full mb-1 pb-1 border-b border-border/30">
+                          <span className="font-medium text-foreground">الصافي:</span>
+                          <span className="font-bold">{formatCurrency(baseAmount)}</span>
+                        </div>
+                        {dv > 0 && (
+                          <div className="flex justify-between w-full text-destructive">
+                            <span>{tx.deductionReason || 'خصم'} {isPerc ? `(${dv}%)` : ''}:</span>
+                            <span>{formatCurrency(dedAmount)}</span>
+                          </div>
+                        )}
+                        {t > 0 && (
+                          <div className="flex justify-between w-full text-blue-600 dark:text-blue-400 mt-0.5">
+                            <span>تكلفة النقل:</span>
+                            <span>{formatCurrency(t)}</span>
+                          </div>
+                        )}
+                        {l > 0 && (
+                          <div className="flex justify-between w-full text-amber-600 dark:text-amber-500 mt-0.5">
+                            <span>اليد العاملة:</span>
+                            <span>{formatCurrency(l)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
                 ) : null}
               </div>
             </div>

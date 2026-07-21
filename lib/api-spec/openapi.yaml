@@ -600,14 +600,25 @@ components:
           enum: [cash, transfer, card, check]
           nullable: true
           default: cash
-        deductionPercentage:
+        deductionType:
+          type: string
+          enum: [percentage, amount]
+          nullable: true
+          default: percentage
+        deductionValue:
           type: number
           nullable: true
-          description: Percentage of deduction (e.g. 10.00)
+          description: Value of deduction (e.g. 10.00 or 150)
         deductionReason:
           type: string
           nullable: true
           description: Reason for deduction (e.g. نسبة التوريد)
+        transportCost:
+          type: number
+          nullable: true
+        laborCost:
+          type: number
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -647,11 +658,22 @@ components:
           enum: [cash, transfer, card, check]
           nullable: true
           default: cash
-        deductionPercentage:
+        deductionType:
+          type: string
+          enum: [percentage, amount]
+          nullable: true
+          default: percentage
+        deductionValue:
           type: number
           nullable: true
         deductionReason:
           type: string
+          nullable: true
+        transportCost:
+          type: number
+          nullable: true
+        laborCost:
+          type: number
           nullable: true
 
     TransactionUpdate:
@@ -683,11 +705,21 @@ components:
           type: string
           enum: [cash, transfer, card, check]
           nullable: true
-        deductionPercentage:
+        deductionType:
+          type: string
+          enum: [percentage, amount]
+          nullable: true
+        deductionValue:
           type: number
           nullable: true
         deductionReason:
           type: string
+          nullable: true
+        transportCost:
+          type: number
+          nullable: true
+        laborCost:
+          type: number
           nullable: true
 
     DashboardSummary:

@@ -66,13 +66,36 @@ export const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(
                 </td>
                 <td className="border border-black p-2 font-black text-right" dir="ltr">
                   <div className="text-left">{formatCurrency(tx.amount)}</div>
-                  {tx.deductionPercentage ? (
-                    <div className="text-[10px] text-gray-700 font-normal mt-1 border-t border-gray-300 pt-1 text-right">
-                      <div className="text-left">الصافي: {formatCurrency(tx.amount - (tx.amount * tx.deductionPercentage / 100))}</div>
-                      <div className="text-red-700 text-left mt-0.5">
-                        {tx.deductionReason || 'خصم'} ({tx.deductionPercentage}%): {formatCurrency(tx.amount * tx.deductionPercentage / 100)}
-                      </div>
-                    </div>
+                  {(tx.deductionValue || tx.transportCost || tx.laborCost) ? (
+                    (() => {
+                      const t = tx.transportCost || 0;
+                      const l = tx.laborCost || 0;
+                      const dv = tx.deductionValue || 0;
+                      const isPerc = tx.deductionType !== 'amount';
+                      const baseAmount = isPerc ? ((tx.amount - t - l) / (1 + (dv / 100))) : (tx.amount - t - l - dv);
+                      const dedAmount = isPerc ? (baseAmount * (dv / 100)) : dv;
+                      
+                      return (
+                        <div className="text-[10px] text-gray-700 font-normal mt-1 border-t border-gray-300 pt-1 text-right">
+                          <div className="text-left">الصافي: {formatCurrency(baseAmount)}</div>
+                          {dv > 0 && (
+                            <div className="text-red-700 text-left mt-0.5">
+                              {tx.deductionReason || 'خصم'} {isPerc ? `(${dv}%)` : ''}: {formatCurrency(dedAmount)}
+                            </div>
+                          )}
+                          {t > 0 && (
+                            <div className="text-blue-800 text-left mt-0.5">
+                              نقل: {formatCurrency(t)}
+                            </div>
+                          )}
+                          {l > 0 && (
+                            <div className="text-amber-800 text-left mt-0.5">
+                              يد عاملة: {formatCurrency(l)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   ) : null}
                 </td>
                 <td className="border border-black p-2">

@@ -56,8 +56,11 @@ router.get("/projects/:id/transactions", async (c) => {
       transactions.map((t) => ({ 
         ...t, 
         amount: Number(t.amount),
-        deductionPercentage: t.deductionPercentage !== null ? Number(t.deductionPercentage) : undefined,
+        deductionType: t.deductionType || undefined,
+        deductionValue: t.deductionValue !== null ? Number(t.deductionValue) : undefined,
         deductionReason: t.deductionReason || undefined,
+        transportCost: t.transportCost !== null ? Number(t.transportCost) : undefined,
+        laborCost: t.laborCost !== null ? Number(t.laborCost) : undefined,
       })),
     ),
   );
@@ -83,7 +86,10 @@ router.post("/projects/:id/transactions", async (c) => {
       ...parsed.data,
       date: dateStr,
       amount: String(parsed.data.amount),
-      deductionPercentage: parsed.data.deductionPercentage !== undefined ? String(parsed.data.deductionPercentage) : null,
+      deductionType: parsed.data.deductionType || undefined,
+      deductionValue: parsed.data.deductionValue !== undefined ? String(parsed.data.deductionValue) : null,
+      transportCost: parsed.data.transportCost !== undefined ? String(parsed.data.transportCost) : null,
+      laborCost: parsed.data.laborCost !== undefined ? String(parsed.data.laborCost) : null,
       projectId: params.data.id,
     })
     .returning();
@@ -94,8 +100,11 @@ router.post("/projects/:id/transactions", async (c) => {
     CreateProjectTransactionResponse.parse({
       ...transaction,
       amount: Number(transaction.amount),
-      deductionPercentage: transaction.deductionPercentage !== null ? Number(transaction.deductionPercentage) : undefined,
+      deductionType: transaction.deductionType || undefined,
+      deductionValue: transaction.deductionValue !== null ? Number(transaction.deductionValue) : undefined,
       deductionReason: transaction.deductionReason || undefined,
+      transportCost: transaction.transportCost !== null ? Number(transaction.transportCost) : undefined,
+      laborCost: transaction.laborCost !== null ? Number(transaction.laborCost) : undefined,
     }),
     201
   );
@@ -120,7 +129,11 @@ router.post("/projects/:id/transactions/bulk", async (c) => {
     ...tx,
     date: tx.date.toISOString().slice(0, 10),
     amount: String(tx.amount),
-    deductionPercentage: tx.deductionPercentage !== undefined ? String(tx.deductionPercentage) : null,
+    deductionType: tx.deductionType || undefined,
+    deductionValue: tx.deductionValue !== undefined ? String(tx.deductionValue) : null,
+    deductionReason: tx.deductionReason || undefined,
+    transportCost: tx.transportCost !== undefined ? String(tx.transportCost) : null,
+    laborCost: tx.laborCost !== undefined ? String(tx.laborCost) : null,
     projectId: params.data.id,
   }));
 
@@ -133,8 +146,11 @@ router.post("/projects/:id/transactions/bulk", async (c) => {
     inserted.map(t => CreateProjectTransactionResponse.parse({
       ...t,
       amount: Number(t.amount),
-      deductionPercentage: t.deductionPercentage !== null ? Number(t.deductionPercentage) : undefined,
+      deductionType: t.deductionType || undefined,
+      deductionValue: t.deductionValue !== null ? Number(t.deductionValue) : undefined,
       deductionReason: t.deductionReason || undefined,
+      transportCost: t.transportCost !== null ? Number(t.transportCost) : undefined,
+      laborCost: t.laborCost !== null ? Number(t.laborCost) : undefined,
     })),
     201
   );
@@ -165,14 +181,16 @@ router.patch("/transactions/:id", async (c) => {
   if (!owned || !role) return c.json({ error: "Transaction not found" }, 404);
   if (role === "viewer") return c.json({ error: "Forbidden" }, 403);
 
-  const { date, amount, deductionPercentage, ...rest } = parsed.data;
+  const { date, amount, deductionValue, transportCost, laborCost, ...rest } = parsed.data;
   const [transaction] = await db
     .update(transactionsTable)
     .set({
       ...rest,
       ...(date ? { date: date.toISOString().slice(0, 10) } : {}),
       ...(amount !== undefined ? { amount: String(amount) } : {}),
-      ...(deductionPercentage !== undefined ? { deductionPercentage: deductionPercentage === null ? null : String(deductionPercentage) } : {}),
+      ...(deductionValue !== undefined ? { deductionValue: deductionValue === null ? null : String(deductionValue) } : {}),
+      ...(transportCost !== undefined ? { transportCost: transportCost === null ? null : String(transportCost) } : {}),
+      ...(laborCost !== undefined ? { laborCost: laborCost === null ? null : String(laborCost) } : {}),
     })
     .where(eq(transactionsTable.id, params.data.id))
     .returning();
@@ -183,8 +201,11 @@ router.patch("/transactions/:id", async (c) => {
     UpdateTransactionResponse.parse({
       ...transaction,
       amount: Number(transaction.amount),
-      deductionPercentage: transaction.deductionPercentage !== null ? Number(transaction.deductionPercentage) : undefined,
+      deductionType: transaction.deductionType || undefined,
+      deductionValue: transaction.deductionValue !== null ? Number(transaction.deductionValue) : undefined,
       deductionReason: transaction.deductionReason || undefined,
+      transportCost: transaction.transportCost !== null ? Number(transaction.transportCost) : undefined,
+      laborCost: transaction.laborCost !== null ? Number(transaction.laborCost) : undefined,
     }),
   );
 });

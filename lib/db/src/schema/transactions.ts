@@ -24,8 +24,11 @@ export const transactionsTable = pgTable("transactions", {
   shopName: text("shop_name"),
   personName: text("person_name"),
   paymentMethod: text("payment_method", { enum: ["cash", "transfer", "card", "check"] }).default("cash"),
-  deductionPercentage: numeric("deduction_percentage", { precision: 5, scale: 2 }),
+  deductionType: text("deduction_type", { enum: ["percentage", "amount"] }).default("percentage"),
+  deductionValue: numeric("deduction_value", { precision: 12, scale: 2 }),
   deductionReason: text("deduction_reason"),
+  transportCost: numeric("transport_cost", { precision: 12, scale: 2 }),
+  laborCost: numeric("labor_cost", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

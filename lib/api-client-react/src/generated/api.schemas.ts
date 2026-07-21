@@ -106,6 +106,14 @@ export const TransactionPaymentMethod = {
   check: 'check',
 } as const;
 
+export type TransactionDeductionType = typeof TransactionDeductionType[keyof typeof TransactionDeductionType] | null;
+
+
+export const TransactionDeductionType = {
+  percentage: 'percentage',
+  amount: 'amount',
+} as const;
+
 export interface Transaction {
   id: number;
   projectId: number;
@@ -120,10 +128,13 @@ export interface Transaction {
   /** Name of the person giving or receiving the money */
   personName?: string | null;
   paymentMethod?: TransactionPaymentMethod;
-  /** Percentage of deduction (e.g. 10.00) */
-  deductionPercentage?: number | null;
+  deductionType?: TransactionDeductionType;
+  /** Value of deduction (e.g. 10.00 or 150) */
+  deductionValue?: number | null;
   /** Reason for deduction (e.g. نسبة التوريد) */
   deductionReason?: string | null;
+  transportCost?: number | null;
+  laborCost?: number | null;
   createdAt: string;
 }
 
@@ -145,6 +156,14 @@ export const TransactionInputPaymentMethod = {
   check: 'check',
 } as const;
 
+export type TransactionInputDeductionType = typeof TransactionInputDeductionType[keyof typeof TransactionInputDeductionType] | null;
+
+
+export const TransactionInputDeductionType = {
+  percentage: 'percentage',
+  amount: 'amount',
+} as const;
+
 export interface TransactionInput {
   type: TransactionInputType;
   /** @exclusiveMinimum 0 */
@@ -157,8 +176,11 @@ export interface TransactionInput {
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionInputPaymentMethod;
-  deductionPercentage?: number | null;
+  deductionType?: TransactionInputDeductionType;
+  deductionValue?: number | null;
   deductionReason?: string | null;
+  transportCost?: number | null;
+  laborCost?: number | null;
 }
 
 export type TransactionUpdateType = typeof TransactionUpdateType[keyof typeof TransactionUpdateType];
@@ -179,6 +201,14 @@ export const TransactionUpdatePaymentMethod = {
   check: 'check',
 } as const;
 
+export type TransactionUpdateDeductionType = typeof TransactionUpdateDeductionType[keyof typeof TransactionUpdateDeductionType] | null;
+
+
+export const TransactionUpdateDeductionType = {
+  percentage: 'percentage',
+  amount: 'amount',
+} as const;
+
 export interface TransactionUpdate {
   type?: TransactionUpdateType;
   /** @exclusiveMinimum 0 */
@@ -191,8 +221,11 @@ export interface TransactionUpdate {
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionUpdatePaymentMethod;
-  deductionPercentage?: number | null;
+  deductionType?: TransactionUpdateDeductionType;
+  deductionValue?: number | null;
   deductionReason?: string | null;
+  transportCost?: number | null;
+  laborCost?: number | null;
 }
 
 export interface DashboardSummary {

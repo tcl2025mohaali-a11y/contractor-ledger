@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { TransactionInputDeductionType } from './transactionInputDeductionType';
 import type { TransactionInputPaymentMethod } from './transactionInputPaymentMethod';
 import type { TransactionInputType } from './transactionInputType';
 
@@ -20,6 +21,9 @@ export interface TransactionInput {
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionInputPaymentMethod;
-  deductionPercentage?: number | null;
+  deductionType?: TransactionInputDeductionType;
+  deductionValue?: number | null;
   deductionReason?: string | null;
+  transportCost?: number | null;
+  laborCost?: number | null;
 }

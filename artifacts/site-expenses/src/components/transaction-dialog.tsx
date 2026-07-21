@@ -21,8 +21,11 @@ const transactionSchema = z.object({
   shopName: z.string().optional(),
   personName: z.string().optional(),
   paymentMethod: z.enum(["cash", "transfer", "card", "check"]).optional().default("cash"),
-  deductionPercentage: z.coerce.number().min(0, "لا يمكن أن تكون النسبة سالبة").max(100, "لا يمكن أن تتجاوز 100").optional().or(z.literal("")),
+  deductionType: z.enum(["percentage", "amount"]).optional().default("percentage"),
+  deductionValue: z.coerce.number().min(0, "لا يمكن أن تكون القيمة سالبة").optional().or(z.literal("")),
   deductionReason: z.string().optional(),
+  transportCost: z.coerce.number().min(0, "لا يمكن أن تكون القيمة سالبة").optional().or(z.literal("")),
+  laborCost: z.coerce.number().min(0, "لا يمكن أن تكون القيمة سالبة").optional().or(z.literal("")),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -53,8 +56,11 @@ export function TransactionDialog({
       shopName: "",
       personName: "",
       paymentMethod: "cash",
-      deductionPercentage: "",
+      deductionType: "percentage",
+      deductionValue: "",
       deductionReason: "",
+      transportCost: "",
+      laborCost: "",
     }
   });
 
@@ -70,15 +76,39 @@ export function TransactionDialog({
         type,
         amount: "" as unknown as number,
         description: "",
-        date: new Date().toISOString().split('T')[0],
         shopName: "",
         personName: "",
         paymentMethod: "cash",
-        deductionPercentage: "",
+        deductionType: "percentage",
+        deductionValue: "",
         deductionReason: "",
+        transportCost: "",
+        laborCost: "",
       });
     }
   }, [open, defaultValues, type, form]);
+
+  const watchAmount = form.watch("amount");
+  const watchDeductionType = form.watch("deductionType");
+  const watchDeductionValue = form.watch("deductionValue");
+  const watchTransport = form.watch("transportCost");
+  const watchLabor = form.watch("laborCost");
+
+  const calcGross = () => {
+    const a = Number(watchAmount) || 0;
+    const dv = Number(watchDeductionValue) || 0;
+    const t = Number(watchTransport) || 0;
+    const l = Number(watchLabor) || 0;
+    
+    let ded = 0;
+    if (watchDeductionType === "percentage") {
+      ded = a * dv / 100;
+    } else {
+      ded = dv;
+    }
+    
+    return a + ded + t + l;
+  };
 
   const onSubmit = async (values: TransactionFormData) => {
     const onSuccess = () => {
@@ -122,8 +152,18 @@ export function TransactionDialog({
     }
 
     const submitData = { ...values };
-    if (submitData.deductionPercentage === "" || submitData.deductionPercentage === 0) {
-      submitData.deductionPercentage = undefined;
+    
+    // Auto-calculate Gross Amount
+    submitData.amount = calcGross();
+
+    if (submitData.deductionValue === "" || submitData.deductionValue === 0) {
+      submitData.deductionValue = undefined;
+    }
+    if (submitData.transportCost === "" || submitData.transportCost === 0) {
+      submitData.transportCost = undefined;
+    }
+    if (submitData.laborCost === "" || submitData.laborCost === 0) {
+      submitData.laborCost = undefined;
     }
 
     if (isEdit && transactionId) {
@@ -145,7 +185,7 @@ export function TransactionDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label>المبلغ (د.ل)</Label>
+            <Label>المبلغ الأساسي للفاتورة (د.ل)</Label>
             <Input 
               type="number" 
               step="any" 
@@ -156,6 +196,14 @@ export function TransactionDialog({
             />
             {form.formState.errors.amount && <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>}
           </div>
+
+          {(calcGross() > Number(watchAmount || 0)) && (
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-md text-center">
+              <span className="text-sm text-muted-foreground block mb-1">الإجمالي الذي سيتم خصمه من رصيد المشروع:</span>
+              <span className="text-xl font-black text-primary" dir="ltr">{calcGross().toFixed(2)} د.ل</span>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>الوصف</Label>
             <Input {...form.register("description")} placeholder={type === "deposit" ? "مثال: دفعة من المالك" : "مثال: أسمنت وبلك"} />
@@ -196,22 +244,61 @@ export function TransactionDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg border border-border">
             <div className="space-y-2">
-              <Label>نسبة الخصم / التوريد % (اختياري)</Label>
-              <Input 
-                type="number" 
-                step="any" 
-                {...form.register("deductionPercentage")} 
-                placeholder="مثال: 10" 
-                dir="ltr" 
-                className="text-right" 
-              />
-              {form.formState.errors.deductionPercentage && <p className="text-sm text-destructive">{form.formState.errors.deductionPercentage.message}</p>}
+              <Label>الخصم / التوريد (اختياري)</Label>
+              <div className="flex gap-2">
+                <Select 
+                  value={form.watch("deductionType")} 
+                  onValueChange={(val: any) => form.setValue("deductionType", val)}
+                >
+                  <SelectTrigger className="w-[100px] shrink-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">نسبة %</SelectItem>
+                    <SelectItem value="amount">رقم ثابت</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input 
+                  type="number" 
+                  step="any" 
+                  {...form.register("deductionValue")} 
+                  placeholder={form.watch("deductionType") === "percentage" ? "10" : "150"} 
+                  dir="ltr" 
+                  className="text-right" 
+                />
+              </div>
+              {form.formState.errors.deductionValue && <p className="text-sm text-destructive">{form.formState.errors.deductionValue.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>سبب الخصم (اختياري)</Label>
               <Input {...form.register("deductionReason")} placeholder="مثال: عمولة / نسبة توريد" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 bg-muted/10 p-3 rounded-lg border border-border border-dashed">
+            <div className="space-y-2">
+              <Label>تكلفة النقل (اختياري)</Label>
+              <Input 
+                type="number" 
+                step="any" 
+                {...form.register("transportCost")} 
+                placeholder="مثال: 50" 
+                dir="ltr" 
+                className="text-right" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>اليد العاملة (اختياري)</Label>
+              <Input 
+                type="number" 
+                step="any" 
+                {...form.register("laborCost")} 
+                placeholder="مثال: 100" 
+                dir="ltr" 
+                className="text-right" 
+              />
             </div>
           </div>
 
