@@ -14,7 +14,7 @@ export const projectMembersTable = pgTable("project_members", {
   projectId: integer("project_id")
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull(),
+  userId: text("user_id"),
   email: text("email").notNull(),
   role: text("role", { enum: ["editor", "viewer"] }).notNull().default("viewer"),
   createdAt: timestamp("created_at", { withTimezone: true })

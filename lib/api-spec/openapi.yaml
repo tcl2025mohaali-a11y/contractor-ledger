@@ -261,7 +261,7 @@ paths:
         "404":
           description: Project not found
 
-  /projects/{id}/members/{userId}:
+  /projects/{id}/members/{memberId}:
     delete:
       operationId: removeProjectMember
       tags: [projects]
@@ -272,11 +272,11 @@ paths:
           required: true
           schema:
             type: integer
-        - name: userId
+        - name: memberId
           in: path
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "204":
           description: Deleted
@@ -755,6 +755,7 @@ components:
           type: integer
         userId:
           type: string
+          nullable: true
         email:
           type: string
         role:

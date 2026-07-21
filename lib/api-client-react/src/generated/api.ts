@@ -879,21 +879,21 @@ export const useInviteProjectMember = <TError = ErrorType<ErrorEnvelope | void>,
     }
 
 export const getRemoveProjectMemberUrl = (id: number,
-    userId: string,) => {
+    memberId: number,) => {
 
 
 
 
-  return `/api/projects/${id}/members/${userId}`
+  return `/api/projects/${id}/members/${memberId}`
 }
 
 /**
  * @summary Remove a member from a project
  */
 export const removeProjectMember = async (id: number,
-    userId: string, options?: RequestInit): Promise<void> => {
+    memberId: number, options?: RequestInit): Promise<void> => {
 
-  return customFetch<void>(getRemoveProjectMemberUrl(id,userId),
+  return customFetch<void>(getRemoveProjectMemberUrl(id,memberId),
   {
     ...options,
     method: 'DELETE'
@@ -907,8 +907,8 @@ export const removeProjectMember = async (id: number,
 
 
 export const getRemoveProjectMemberMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeProjectMember>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeProjectMember>>, TError,{id: number;userId: string}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeProjectMember>>, TError,{id: number;memberId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeProjectMember>>, TError,{id: number;memberId: number}, TContext> => {
 
 const mutationKey = ['removeProjectMember'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -920,10 +920,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeProjectMember>>, {id: number;userId: string}> = (props) => {
-          const {id,userId} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeProjectMember>>, {id: number;memberId: number}> = (props) => {
+          const {id,memberId} = props ?? {};
 
-          return  removeProjectMember(id,userId,requestOptions)
+          return  removeProjectMember(id,memberId,requestOptions)
         }
 
 
@@ -941,11 +941,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Remove a member from a project
  */
 export const useRemoveProjectMember = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeProjectMember>>, TError,{id: number;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeProjectMember>>, TError,{id: number;memberId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof removeProjectMember>>,
         TError,
-        {id: number;userId: string},
+        {id: number;memberId: number},
         TContext
       > => {
       return useMutation(getRemoveProjectMemberMutationOptions(options));

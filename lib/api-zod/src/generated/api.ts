@@ -273,7 +273,7 @@ export const ListProjectMembersParams = zod.object({
 export const ListProjectMembersResponseItem = zod.object({
   "id": zod.number(),
   "projectId": zod.number(),
-  "userId": zod.string(),
+  "userId": zod.string().nullable(),
   "email": zod.string(),
   "role": zod.enum(['editor', 'viewer']),
   "createdAt": zod.coerce.date()
@@ -296,7 +296,7 @@ export const InviteProjectMemberBody = zod.object({
 export const InviteProjectMemberResponse = zod.object({
   "id": zod.number(),
   "projectId": zod.number(),
-  "userId": zod.string(),
+  "userId": zod.string().nullable(),
   "email": zod.string(),
   "role": zod.enum(['editor', 'viewer']),
   "createdAt": zod.coerce.date()
@@ -308,7 +308,7 @@ export const InviteProjectMemberResponse = zod.object({
  */
 export const RemoveProjectMemberParams = zod.object({
   "id": zod.coerce.number(),
-  "userId": zod.coerce.string()
+  "memberId": zod.coerce.number()
 })
 
 export const RemoveProjectMemberResponse = zod.void()

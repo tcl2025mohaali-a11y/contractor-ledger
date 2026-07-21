@@ -10,7 +10,7 @@ import type { ProjectMemberRole } from './projectMemberRole';
 export interface ProjectMember {
   id: number;
   projectId: number;
-  userId: string;
+  userId: string | null;
   email: string;
   role: ProjectMemberRole;
   createdAt: Date;

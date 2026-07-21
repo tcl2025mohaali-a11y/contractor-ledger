@@ -66,11 +66,11 @@ export function MembersDialog({ projectId, open, onOpenChange, currentUserRole }
     }
   };
 
-  const handleRemove = async (userId: string) => {
+  const handleRemove = async (memberId: number) => {
     try {
       await removeMutation.mutateAsync({
         id: projectId,
-        userId
+        memberId
       });
       toast({
         title: "تم حذف العضو",
@@ -143,9 +143,16 @@ export function MembersDialog({ projectId, open, onOpenChange, currentUserRole }
           ) : (
             <div className="flex flex-col gap-2">
               {members.map((m) => (
-                <div key={m.userId} className="flex items-center justify-between p-3 border rounded-md">
+                <div key={m.id} className="flex items-center justify-between p-3 border rounded-md">
                   <div>
-                    <p className="font-medium text-sm">{m.email}</p>
+                    <p className="font-medium text-sm flex items-center gap-2">
+                      {m.email}
+                      {!m.userId && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
+                          في الانتظار
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {m.role === "editor" ? "محرر" : "مشاهد"}
                     </p>
@@ -155,7 +162,7 @@ export function MembersDialog({ projectId, open, onOpenChange, currentUserRole }
                       variant="ghost"
                       size="icon"
                       className="text-destructive hover:bg-destructive/10"
-                      onClick={() => handleRemove(m.userId)}
+                      onClick={() => handleRemove(m.id)}
                       disabled={removeMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" />

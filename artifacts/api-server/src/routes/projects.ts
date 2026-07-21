@@ -40,6 +40,19 @@ async function claimOrphanProjects(userId: string): Promise<void> {
     .where(isNull(projectsTable.userId));
 }
 
+async function claimOrphanInvites(userId: string, c: any): Promise<void> {
+  const { CLERK_SECRET_KEY } = env<{ CLERK_SECRET_KEY: string }>(c);
+  const clerkClient = createClerkClient({ secretKey: CLERK_SECRET_KEY });
+  const user = await clerkClient.users.getUser(userId);
+  const emails = user.emailAddresses.map((e: any) => e.emailAddress);
+  
+  if (emails.length > 0) {
+    await db.update(projectMembersTable)
+      .set({ userId })
+      .where(and(isNull(projectMembersTable.userId), inArray(projectMembersTable.email, emails)));
+  }
+}
+
 // Helper to check if a user has access to a project
 async function checkProjectAccess(projectId: number, userId: string) {
   const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId));
@@ -56,6 +69,7 @@ async function checkProjectAccess(projectId: number, userId: string) {
 router.get("/projects", async (c) => {
   const userId = c.get("userId");
   await claimOrphanProjects(userId);
+  await claimOrphanInvites(userId, c);
 
   const memberProjectIds = db.select({ id: projectMembersTable.projectId })
     .from(projectMembersTable)
@@ -190,21 +204,25 @@ router.post("/projects/:id/members", async (c) => {
   const clerkClient = createClerkClient({ secretKey: CLERK_SECRET_KEY });
 
   const users = await clerkClient.users.getUserList({ emailAddress: [emailToInvite] });
-  if (!users || !users.data || users.data.length === 0) {
-    return c.json({ error: "User not found. They must create an account first." }, 400);
-  }
-  const invitedUserId = users.data[0].id;
+  const invitedUserId = (users && users.data && users.data.length > 0) ? users.data[0].id : null;
 
-  if (invitedUserId === project.userId) {
+  if (invitedUserId && invitedUserId === project.userId) {
     return c.json({ error: "Cannot invite the project owner." }, 400);
   }
 
-  // Check if already a member
+  // Check if already a member or invited
+  const existingConditions = [eq(projectMembersTable.projectId, project.id)];
+  if (invitedUserId) {
+    existingConditions.push(or(eq(projectMembersTable.userId, invitedUserId), eq(projectMembersTable.email, emailToInvite))!);
+  } else {
+    existingConditions.push(eq(projectMembersTable.email, emailToInvite));
+  }
+
   const [existing] = await db.select().from(projectMembersTable)
-    .where(and(eq(projectMembersTable.projectId, project.id), eq(projectMembersTable.userId, invitedUserId)));
+    .where(and(...(existingConditions as any[])));
   
   if (existing) {
-    return c.json({ error: "User is already a member." }, 400);
+    return c.json({ error: "User is already a member or has a pending invite." }, 400);
   }
 
   const [newMember] = await db.insert(projectMembersTable)
@@ -218,19 +236,23 @@ router.post("/projects/:id/members", async (c) => {
   return c.json(InviteProjectMemberResponse.parse(newMember), 201);
 });
 
-router.delete("/projects/:id/members/:userId", async (c) => {
+router.delete("/projects/:id/members/:memberId", async (c) => {
   const userId = c.get("userId");
   const params = RemoveProjectMemberParams.safeParse(c.req.param());
   if (!params.success) return c.json({ error: params.error.message }, 400);
 
   const { project, role } = await checkProjectAccess(params.data.id, userId);
   if (!project) return c.json({ error: "Project not found" }, 404);
-  if (role !== "owner" && userId !== params.data.userId) { // users can remove themselves, or owner can remove anyone
+  
+  const [memberToRemove] = await db.select().from(projectMembersTable).where(eq(projectMembersTable.id, params.data.memberId));
+  if (!memberToRemove) return c.json({ error: "Member not found" }, 404);
+
+  if (role !== "owner" && userId !== memberToRemove.userId) {
     return c.json({ error: "Forbidden." }, 403);
   }
 
   await db.delete(projectMembersTable)
-    .where(and(eq(projectMembersTable.projectId, project.id), eq(projectMembersTable.userId, params.data.userId)));
+    .where(eq(projectMembersTable.id, params.data.memberId));
 
   return new Response(null, { status: 204 });
 });

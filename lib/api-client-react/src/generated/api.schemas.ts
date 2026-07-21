@@ -246,7 +246,7 @@ export const ProjectMemberRole = {
 export interface ProjectMember {
   id: number;
   projectId: number;
-  userId: string;
+  userId: string | null;
   email: string;
   role: ProjectMemberRole;
   createdAt: string;
