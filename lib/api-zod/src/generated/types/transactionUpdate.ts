@@ -19,6 +19,8 @@ export interface TransactionUpdate {
   date?: Date;
   /** Object storage path to the uploaded receipt/invoice PDF or image, if any. */
   receiptPath?: string | null;
+  /** List of object storage paths to uploaded receipts/invoices. */
+  receiptPaths?: string[] | null;
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionUpdatePaymentMethod;

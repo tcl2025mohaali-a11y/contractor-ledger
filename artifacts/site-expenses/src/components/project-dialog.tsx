@@ -15,6 +15,7 @@ const projectSchema = z.object({
   name: z.string().min(1, "اسم المشروع مطلوب"),
   clientName: z.string().min(1, "اسم المالك مطلوب"),
   location: z.string().optional(),
+  budget: z.number().or(z.string().transform(val => val === '' ? undefined : Number(val))).optional(),
   notes: z.string().optional(),
 });
 
@@ -40,6 +41,7 @@ export function ProjectDialog({
       name: "",
       clientName: "",
       location: "",
+      budget: undefined,
       notes: ""
     }
   });
@@ -88,6 +90,10 @@ export function ProjectDialog({
           <div className="space-y-2">
             <Label>الموقع (اختياري)</Label>
             <Input {...form.register("location")} placeholder="مثال: طريق المطار" />
+          </div>
+          <div className="space-y-2">
+            <Label>الميزانية التقديرية (د.ل) - اختياري</Label>
+            <Input type="number" step="0.01" {...form.register("budget")} placeholder="مثال: 150000" dir="ltr" />
           </div>
           <div className="space-y-2">
             <Label>ملاحظات (اختياري)</Label>

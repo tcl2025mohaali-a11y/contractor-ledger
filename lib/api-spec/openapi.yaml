@@ -587,6 +587,12 @@ components:
           type: string
           nullable: true
           description: Object storage path to the uploaded receipt/invoice PDF or image, if any.
+        receiptPaths:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: List of object storage paths to uploaded receipts/invoices.
         shopName:
           type: string
           nullable: true
@@ -651,6 +657,12 @@ components:
           type: string
           nullable: true
           description: Object storage path to the uploaded receipt/invoice PDF or image, if any.
+        receiptPaths:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: List of object storage paths to uploaded receipts/invoices.
         shopName:
           type: string
           nullable: true
@@ -703,6 +715,12 @@ components:
           type: string
           nullable: true
           description: Object storage path to the uploaded receipt/invoice PDF or image, if any.
+        receiptPaths:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: List of object storage paths to uploaded receipts/invoices.
         shopName:
           type: string
           nullable: true

@@ -18,6 +18,7 @@ const transactionSchema = z.object({
   description: z.string().min(1, "الوصف مطلوب"),
   date: z.string().min(1, "التاريخ مطلوب"),
   receiptPath: z.string().optional(),
+  receiptPaths: z.array(z.string()).optional(),
   shopName: z.string().optional(),
   personName: z.string().optional(),
   category: z.enum(["materials", "labor", "transport", "permits", "equipment", "others"]).optional().default("others"),
@@ -67,13 +68,13 @@ export function TransactionDialog({
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptFiles, setReceiptFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   // Reset form when dialog opens/closes or type changes
   useEffect(() => {
     if (open) {
-      setReceiptFile(null);
+      setReceiptFiles([]);
       form.reset(defaultValues || {
         type,
         amount: "" as unknown as number,
@@ -124,27 +125,30 @@ export function TransactionDialog({
     };
 
     try {
-      if (receiptFile) {
+      if (receiptFiles.length > 0) {
         setIsUploading(true);
-        // 1. Get presigned URL
-        const { uploadURL, objectPath } = await requestUploadUrl({
-          name: receiptFile.name,
-          size: receiptFile.size,
-          contentType: receiptFile.type
-        });
+        const paths: string[] = [];
         
-        // 2. Upload file directly to R2
-        const uploadRes = await fetch(uploadURL, {
-          method: 'PUT',
-          body: receiptFile,
-          headers: {
-            'Content-Type': receiptFile.type,
-          }
-        });
+        for (const file of receiptFiles) {
+          const { uploadURL, objectPath } = await requestUploadUrl({
+            name: file.name,
+            size: file.size,
+            contentType: file.type
+          });
+          
+          const uploadRes = await fetch(uploadURL, {
+            method: 'PUT',
+            body: file,
+            headers: {
+              'Content-Type': file.type,
+            }
+          });
+          
+          if (!uploadRes.ok) throw new Error("Upload failed for " + file.name);
+          paths.push(objectPath);
+        }
         
-        if (!uploadRes.ok) throw new Error("Upload failed");
-        
-        values.receiptPath = objectPath;
+        values.receiptPaths = paths;
       }
     } catch (e) {
       toast.error("فشل رفع الصورة. تأكد من إعدادات التخزين السحابي.");
@@ -334,46 +338,68 @@ export function TransactionDialog({
           )}
 
           <div className="space-y-2">
-            <Label>صورة الفاتورة / الإيصال (اختياري)</Label>
+            <Label>صور الفاتورة / الإيصال (اختياري)</Label>
             <input 
               type="file" 
               accept="image/*" 
+              multiple
               className="hidden" 
               ref={fileInputRef} 
               onChange={(e) => {
-                if (e.target.files?.[0]) setReceiptFile(e.target.files[0]);
+                if (e.target.files) {
+                  setReceiptFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                }
               }}
             />
-            {receiptFile || form.watch('receiptPath') ? (
-              <div className="flex items-center justify-between p-2 border rounded bg-muted/50">
-                <span className="text-sm truncate max-w-[200px]">
-                  {receiptFile ? receiptFile.name : 'صورة مرفقة مسبقاً'}
-                </span>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 text-destructive"
-                  onClick={() => {
-                    setReceiptFile(null);
-                    form.setValue('receiptPath', undefined);
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+            
+            {(receiptFiles.length > 0 || form.watch('receiptPaths')?.length || form.watch('receiptPath')) && (
+              <div className="space-y-2">
+                {/* Existing old single receipt */}
+                {form.watch('receiptPath') && (
+                  <div className="flex items-center justify-between p-2 border rounded bg-muted/50">
+                    <span className="text-sm truncate max-w-[200px]">صورة مرفقة مسبقاً (قديمة)</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => form.setValue('receiptPath', undefined)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Existing array receipts */}
+                {form.watch('receiptPaths')?.map((path, idx) => (
+                  <div key={`existing-${idx}`} className="flex items-center justify-between p-2 border rounded bg-muted/50">
+                    <span className="text-sm truncate max-w-[200px]">صورة مرفقة {idx + 1}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                      const paths = form.watch('receiptPaths') || [];
+                      form.setValue('receiptPaths', paths.filter((_, i) => i !== idx));
+                    }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {/* New files to upload */}
+                {receiptFiles.map((file, idx) => (
+                  <div key={`new-${idx}`} className="flex items-center justify-between p-2 border rounded bg-muted/50">
+                    <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                      setReceiptFiles(prev => prev.filter((_, i) => i !== idx));
+                    }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full border-dashed"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Camera className="mr-2 h-4 w-4" />
-                إرفاق صورة
-              </Button>
             )}
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full border-dashed"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              إرفاق صور إضافية
+            </Button>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">

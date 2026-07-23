@@ -49,6 +49,7 @@ export async function attachTotals(
     const t = totals.get(project.id) ?? { totalReceived: 0, totalSpent: 0 };
     return {
       ...project,
+      budget: project.budget !== null && project.budget !== undefined ? Number(project.budget) : null,
       totalReceived: t.totalReceived,
       totalSpent: t.totalSpent,
       balance: t.totalReceived - t.totalSpent,

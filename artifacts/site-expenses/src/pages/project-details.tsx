@@ -4,6 +4,7 @@ import { useGetProject, useListProjectTransactions, useDeleteProject, getListPro
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { ArrowUpRight, ArrowDownRight, Edit, Trash2, Building2, MapPin, Loader2, ArrowLeft, Printer, Download, Image as ImageIcon, Users, Upload, Search, Filter } from "lucide-react";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
@@ -228,6 +229,17 @@ export default function ProjectDetails() {
               <p className="text-xl font-bold text-destructive">{formatCurrency(project.totalSpent)}</p>
             </div>
           </div>
+          {project.budget && Number(project.budget) > 0 && (
+            <div className="mt-6 pt-4 border-t border-border/50">
+              <div className="flex justify-between items-end mb-2">
+                <p className="text-sm font-bold text-muted-foreground">
+                  الميزانية: <span className="text-foreground">{formatCurrency(Number(project.budget))}</span>
+                </p>
+                <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">{Math.round((project.totalSpent / Number(project.budget)) * 100)}%</span>
+              </div>
+              <Progress value={Math.min(100, (project.totalSpent / Number(project.budget)) * 100)} className="h-2" />
+            </div>
+          )}
           {(totalTransport > 0 || totalLabor > 0 || totalDeduction > 0) && (
             <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border/50 text-xs sm:text-sm">
               {totalDeduction > 0 && (
@@ -384,11 +396,17 @@ export default function ProjectDetails() {
                     </span>
                     
                     <div className="flex gap-1 print:hidden shrink-0">
-                      {tx.receiptPath && (
+                      {(tx as any).receiptPaths && (tx as any).receiptPaths.length > 0 ? (
+                        (tx as any).receiptPaths.map((path: string, idx: number) => (
+                          <Button key={idx} variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => viewReceipt(path)} title={`عرض الإيصال ${idx + 1}`}>
+                            <ImageIcon className="h-4 w-4" />
+                          </Button>
+                        ))
+                      ) : tx.receiptPath ? (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => viewReceipt(tx.receiptPath!)} title="عرض الإيصال">
                           <ImageIcon className="h-4 w-4" />
                         </Button>
-                      )}
+                      ) : null}
                     {project.currentUserRole !== 'viewer' && (
                       <>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => {
@@ -412,6 +430,8 @@ export default function ProjectDetails() {
                             deductionReason: tx.deductionReason || "",
                             transportCost: tx.transportCost || "",
                             laborCost: tx.laborCost || "",
+                            receiptPath: tx.receiptPath || undefined,
+                            receiptPaths: (tx as any).receiptPaths || [],
                           });
                         }}>
                           <Edit className="h-3.5 w-3.5" />

@@ -135,6 +135,8 @@ export interface Transaction {
   date: string;
   /** Object storage path to the uploaded receipt/invoice PDF or image, if any. */
   receiptPath?: string | null;
+  /** List of object storage paths to uploaded receipts/invoices. */
+  receiptPaths?: string[] | null;
   /** Name of the shop or supplier */
   shopName?: string | null;
   /** Name of the person giving or receiving the money */
@@ -198,6 +200,8 @@ export interface TransactionInput {
   date: string;
   /** Object storage path to the uploaded receipt/invoice PDF or image, if any. */
   receiptPath?: string | null;
+  /** List of object storage paths to uploaded receipts/invoices. */
+  receiptPaths?: string[] | null;
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionInputPaymentMethod;
@@ -256,6 +260,8 @@ export interface TransactionUpdate {
   date?: string;
   /** Object storage path to the uploaded receipt/invoice PDF or image, if any. */
   receiptPath?: string | null;
+  /** List of object storage paths to uploaded receipts/invoices. */
+  receiptPaths?: string[] | null;
   shopName?: string | null;
   personName?: string | null;
   paymentMethod?: TransactionUpdatePaymentMethod;
